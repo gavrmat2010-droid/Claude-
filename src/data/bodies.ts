@@ -24,6 +24,10 @@ export interface Look {
   molten?: boolean;
   /** deep-frozen around the white dwarf */
   frozen?: boolean;
+  /** 3D overrides: fraction of surface under water, cloud cover, polar ice (0..1) */
+  ocean?: number;
+  clouds?: number;
+  ice?: number;
 }
 
 export interface Era {
@@ -240,7 +244,7 @@ export const PLANETS: Body[] = [
         from: -4.2e9,
         title: 'Возможно, океаны',
         text: 'Молодое Солнце светит слабее, и на Венере могли существовать жидкие океаны и умеренный климат — сотни миллионов, а то и пару миллиардов лет.',
-        look: { color: '#5b8fc9', color2: '#cde0f0', spots: '#b89a63' },
+        look: { color: '#5b8fc9', color2: '#cde0f0', spots: '#b89a63', ocean: 0.8, clouds: 0.5, ice: 0.3 },
       },
       {
         from: -1.5e9,
@@ -290,7 +294,7 @@ export const PLANETS: Body[] = [
     tempK: 288,
     gravityG: 1,
     displayRadius: 7.5,
-    look: { color: '#2f6fd6', color2: '#8fd8ff', spots: '#3f9a4a' },
+    look: { color: '#2f6fd6', color2: '#8fd8ff', spots: '#4a7f3c' },
     description:
       'Единственная известная планета с жизнью. 71% поверхности покрыто океанами, в атмосфере 21% кислорода, а магнитное поле защищает всё живое от солнечного ветра. Земля — самая плотная планета в Солнечной системе.',
     facts: [
@@ -315,7 +319,7 @@ export const PLANETS: Body[] = [
         from: -4.4e9,
         title: 'Первые океаны',
         text: 'Кора затвердевает, водяной пар конденсируется в океаны. Небо оранжевое от метана и углекислого газа, кислорода нет.',
-        look: { color: '#1f4f9a', color2: '#d8a070', spots: '#5a4a3a' },
+        look: { color: '#1f4f9a', color2: '#d8a070', spots: '#5a4a3a', ice: 0, clouds: 0.5 },
       },
       {
         from: -4.0e9,
@@ -333,13 +337,13 @@ export const PLANETS: Body[] = [
         from: -0.72e9,
         title: 'Земля-снежок',
         text: 'Планета покрывается льдом почти до экватора. Через десятки миллионов лет вулканический CO₂ накопится и растопит лёд.',
-        look: { color: '#dbe9f5', color2: '#ffffff', spots: '#9fb8cc' },
+        look: { color: '#dbe9f5', color2: '#ffffff', spots: '#9fb8cc', ice: 1, ocean: 0.3, clouds: 0.3 },
       },
       {
         from: -0.54e9,
         title: 'Кембрийский взрыв',
         text: 'Жизнь стремительно усложняется: появляются глаза, панцири, хищники. Затем — выход на сушу, леса, динозавры...',
-        look: { color: '#2f6fd6', color2: '#8fd8ff', spots: '#4f8f3a' },
+        look: { color: '#2f6fd6', color2: '#8fd8ff', spots: '#4a7f3c' },
       },
       {
         from: -0.066e9,
@@ -361,31 +365,31 @@ export const PLANETS: Body[] = [
         from: 0.6e9,
         title: 'Конец растений',
         text: 'Солнце ярче, выветривание горных пород вымывает CO₂ из атмосферы. Его становится слишком мало для фотосинтеза большинства растений. Леса исчезают.',
-        look: { color: '#3a70c0', color2: '#a0d0f0', spots: '#a88a4a' },
+        look: { color: '#3a70c0', color2: '#a0d0f0', spots: '#a88a4a', ice: 0.4 },
       },
       {
         from: 0.8e9,
         title: 'Конец сложной жизни',
         text: 'Кислород падает, температура растёт. Животные и почти все растения вымирают. Остаются микробы.',
-        look: { color: '#5a86b8', color2: '#d0c8a8', spots: '#b89860' },
+        look: { color: '#5a86b8', color2: '#d0c8a8', spots: '#b89860', ice: 0.1, clouds: 0.6 },
       },
       {
         from: 1.0e9,
         title: 'Океаны испаряются',
         text: 'Средняя температура выше 47 °C. Океаны активно испаряются, влажный парниковый эффект уносит воду в стратосферу, где её разрушает ультрафиолет.',
-        look: { color: '#b89a6a', color2: '#f0e0b8', spots: '#8aa0b8' },
+        look: { color: '#6f8fb0', color2: '#f0e0b8', spots: '#b89a6a', ocean: 0.4, ice: 0, clouds: 1 },
       },
       {
         from: 1.5e9,
         title: 'Вторая Венера',
         text: 'Воды почти не осталось. Земля — сухая раскалённая планета с плотной атмосферой из углекислого газа.',
-        look: { color: '#c9a060', color2: '#f3dba6', spots: '#a8803e' },
+        look: { color: '#c9a060', color2: '#f3dba6', spots: '#a8803e', ocean: 0, ice: 0, clouds: 1 },
       },
       {
         from: 2.8e9,
         title: 'Стерильная планета',
         text: 'Поверхность около 150 °C. Последние микробы погибли. Земля мертва — но продолжает кружить вокруг разгорающегося Солнца.',
-        look: { color: '#9a8468', color2: '#d8c8a8', spots: '#6a5a48' },
+        look: { color: '#9a8468', color2: '#d8c8a8', spots: '#6a5a48', ocean: 0, ice: 0, clouds: 0.3 },
       },
       {
         from: 5.4e9,
@@ -439,7 +443,7 @@ export const PLANETS: Body[] = [
         from: -4.1e9,
         title: 'Тёплый и влажный Марс',
         text: 'Плотная атмосфера, реки, озёра и, вероятно, океан в северном полушарии. Условия, возможно, пригодные для жизни.',
-        look: { color: '#8a5a3a', color2: '#e0b090', spots: '#3f6fb0' },
+        look: { color: '#3f6fb0', color2: '#e0b090', spots: '#8a5a3a', ocean: 0.45, clouds: 0.4, ice: 0.8 },
       },
       {
         from: -3.7e9,

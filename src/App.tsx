@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BodyStrip from './components/BodyStrip';
 import InfoPanel from './components/InfoPanel';
-import Scene, { type SceneInsets } from './components/Scene';
+import Scene3D from './components/Scene3D';
 import TimeBar from './components/TimeBar';
 import { BODIES, SUN } from './data/bodies';
 import { bodyStateAt, eraAt } from './lib/state';
 import { sunAt } from './lib/sun';
 import { sliderToYears, T_MAX, yearsToSlider } from './lib/time';
+import { MAX_WARP, sim, useSim } from './store';
 
 const PLAY_SPEED = 0.012; // slider units per second
-const MAX_WARP = 10;
+const PANEL_WIDTH = 396;
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
@@ -42,19 +43,16 @@ function useHeight() {
 }
 
 export default function App() {
-  const [years, setYears] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const warpRef = useRef(0);
-  const yearsRef = useRef(0);
+  const years = useSim((s) => s.years);
+  const selectedId = useSim((s) => s.selectedId);
+  const playing = useSim((s) => s.playing);
+  const select = useSim((s) => s.select);
+  const scrub = useSim((s) => s.scrub);
+  const togglePlay = useSim((s) => s.togglePlay);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [headerRef, headerH] = useHeight();
   const [timebarRef, timebarH] = useHeight();
   const [mobilePanelRef, mobilePanelH] = useHeight();
-
-  useEffect(() => {
-    yearsRef.current = years;
-  }, [years]);
 
   const sun = useMemo(() => sunAt(years), [years]);
   const states = useMemo(() => BODIES.map((b) => bodyStateAt(b, years, sun)), [years, sun]);
@@ -69,12 +67,6 @@ export default function App() {
     return parts.join(' · ');
   }, [states, years]);
 
-  const changeYears = useCallback((next: number) => {
-    const dv = Math.abs(yearsToSlider(next) - yearsToSlider(yearsRef.current));
-    warpRef.current = Math.min(MAX_WARP, warpRef.current + dv * 120);
-    setYears(next);
-  }, []);
-
   useEffect(() => {
     if (!playing) return;
     let raf = 0;
@@ -82,14 +74,15 @@ export default function App() {
     const step = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const v = yearsToSlider(yearsRef.current) + dt * PLAY_SPEED;
-      warpRef.current = Math.min(MAX_WARP, warpRef.current + dt * 12);
+      const st = useSim.getState();
+      const v = yearsToSlider(st.years) + dt * PLAY_SPEED;
+      sim.warp = Math.min(MAX_WARP, sim.warp + dt * 12);
       if (v >= 1) {
-        setYears(T_MAX);
-        setPlaying(false);
+        st.setYears(T_MAX);
+        st.setPlaying(false);
         return;
       }
-      setYears(sliderToYears(v));
+      st.setYears(sliderToYears(v));
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -98,62 +91,54 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedId(null);
+      if (e.key === 'Escape') select(null);
       if (e.key === ' ' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
-        setPlaying((p) => !p);
+        togglePlay();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  const togglePlay = useCallback(() => {
-    if (!playing && yearsToSlider(yearsRef.current) >= 1) setYears(0);
-    setPlaying((p) => !p);
-  }, [playing]);
-
-  const insets: SceneInsets = useMemo(
-    () => ({
-      top: headerH + 24,
-      right: isDesktop ? 420 : 0,
-      bottom: timebarH + 32 + (!isDesktop && selected ? mobilePanelH + 12 : 0),
-      left: 0,
-    }),
-    [headerH, timebarH, mobilePanelH, isDesktop, selected],
-  );
+  }, [select, togglePlay]);
 
   const planetStates = states.filter((s) => s.body.id !== 'sun');
   const sunState = states[0];
+  const footerH = timebarH + 32 + (!isDesktop && selected ? mobilePanelH + 12 : 0);
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <Scene years={years} selectedId={selectedId} onSelect={setSelectedId} insets={insets} warpRef={warpRef} />
+      <Scene3D panelWidth={isDesktop ? PANEL_WIDTH + 24 : 0} headerHeight={headerH + 24} footerHeight={footerH} />
 
-      <header ref={headerRef} className="pointer-events-none absolute top-4 right-4 left-4 z-10 flex flex-col gap-3 sm:top-6 sm:left-7 md:right-[420px]">
+      <header
+        ref={headerRef}
+        className="pointer-events-none absolute top-4 right-4 left-4 z-10 flex flex-col gap-3 sm:top-6 sm:left-7"
+        style={isDesktop ? { right: PANEL_WIDTH + 40 } : undefined}
+      >
         <div className="pointer-events-auto">
           <h1 className="text-gradient text-2xl font-extrabold tracking-tight sm:text-3xl">Солнечная система</h1>
-          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">Нажмите на планету и перемотайте время — узнайте, что с ней было и что будет</p>
+          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">
+            Нажмите на планету и перемотайте время · вращайте мышью, приближайте колесом
+          </p>
         </div>
         <div className="pointer-events-auto">
-          <BodyStrip states={[sunState, ...planetStates]} selectedId={selectedId} onSelect={setSelectedId} />
+          <BodyStrip states={[sunState, ...planetStates]} selectedId={selectedId} onSelect={select} />
         </div>
       </header>
 
       {isDesktop && (
-        <div className="absolute top-4 right-4 bottom-4 z-10 flex w-[396px] flex-col justify-start" style={{ bottom: timebarH + 32 }}>
-          <InfoPanel state={selected} sun={sun} years={years} onJump={changeYears} onClose={() => setSelectedId(null)} />
+        <div className="absolute top-4 right-4 z-10 flex flex-col justify-start" style={{ bottom: timebarH + 32, width: PANEL_WIDTH }}>
+          <InfoPanel state={selected} sun={sun} years={years} onJump={scrub} onClose={() => select(null)} />
         </div>
       )}
 
       {!isDesktop && selected && (
         <div ref={mobilePanelRef} className="absolute inset-x-3 z-10 flex max-h-[36vh] flex-col" style={{ bottom: timebarH + 28 }}>
-          <InfoPanel state={selected} sun={sun} years={years} onJump={changeYears} onClose={() => setSelectedId(null)} />
+          <InfoPanel state={selected} sun={sun} years={years} onJump={scrub} onClose={() => select(null)} />
         </div>
       )}
 
       <div ref={timebarRef} className="absolute right-4 bottom-4 left-4 z-10 sm:right-7 sm:left-7">
-        <TimeBar years={years} onChange={changeYears} playing={playing} onTogglePlay={togglePlay} sun={sun} headline={headline} />
+        <TimeBar years={years} onChange={scrub} playing={playing} onTogglePlay={togglePlay} sun={sun} headline={headline} />
       </div>
     </div>
   );
