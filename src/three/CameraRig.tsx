@@ -22,7 +22,7 @@ function fitDistance(camera: THREE.PerspectiveCamera, r: number, ringed: boolean
   const hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
   const half = Math.min(vHalf, hHalf);
   const span = r * (ringed ? 2.6 : 1);
-  return Math.max(span / (Math.tan(half) * 0.42), 4.5);
+  return Math.max(span / (Math.tan(half) * (ringed ? 0.55 : 0.42)), 4.5);
 }
 
 /**

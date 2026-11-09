@@ -2,6 +2,7 @@ import { Suspense, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { PLANETS } from '../data/bodies';
+import { registry } from '../three/scale';
 import { useSim } from '../store';
 import Belts from '../three/Belts';
 import CameraRig from '../three/CameraRig';
@@ -25,6 +26,13 @@ export default function Scene3D({ panelWidth, headerHeight, footerHeight }: Prop
 
   return (
     <div className="absolute inset-0">
+      {/* labels render here instead of next to the canvas, so their mount target never changes */}
+      <div
+        ref={(el) => {
+          registry.htmlPortal.current = el;
+        }}
+        className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
+      />
       <Canvas
         dpr={[1, 1.75]}
         camera={{ position: [0, 88, 215], fov: 45, near: 0.1, far: 6000 }}

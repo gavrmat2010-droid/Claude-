@@ -413,7 +413,13 @@ export default function Planet({ body }: Props) {
       </Billboard>
       {/* kept mounted: unmounting drei <Html> conditionally throws on removeChild, so the label is hidden instead */}
       <group ref={labelRef}>
-        <Html center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }} occlude={[registry.sunRef as RefObject<THREE.Object3D>]}>
+        <Html
+          center
+          zIndexRange={[5, 0]}
+          style={{ pointerEvents: 'none' }}
+          occlude={[registry.sunRef as RefObject<THREE.Object3D>]}
+          portal={registry.htmlPortal as RefObject<HTMLElement>}
+        >
           <button
             type="button"
             onClick={() => select(body.id)}

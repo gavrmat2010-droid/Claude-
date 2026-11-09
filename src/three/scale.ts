@@ -32,6 +32,8 @@ export const registry = {
   radii: {} as Record<string, number>,
   /** the Sun's mesh, used to occlude labels of bodies passing behind it */
   sunRef: { current: null } as { current: THREE.Object3D | null },
+  /** stable DOM container for drei <Html> labels (a changing target makes Html unmount its root mid-render) */
+  htmlPortal: { current: null } as { current: HTMLElement | null },
 };
 
 export function setBody(id: string, pos: THREE.Vector3, radius: number) {
